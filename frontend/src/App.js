@@ -602,8 +602,15 @@ function App() {
       </div>
 
       {/* Footer */}
-      <footer className="text-center py-6 text-gray-500 text-sm">
-        © 2026 Somnum - Centres du sommeil
+      <footer className="py-6">
+        <div className="flex flex-col items-center gap-3">
+          <img 
+            src="https://customer-assets.emergentagent.com/job_checkbox-sheet-maker/artifacts/3z7seif9_logo%20SI%20transparent.png" 
+            alt="SI Logo" 
+            className="h-12 w-auto"
+          />
+          <p className="text-gray-500 text-sm">© 2026 Somnum - Centres du sommeil</p>
+        </div>
       </footer>
     </div>
   );
