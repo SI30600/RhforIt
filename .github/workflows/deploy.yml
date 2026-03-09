@@ -37,8 +37,8 @@ jobs:
         working-directory: ./frontend
         run: yarn build
         env:
-          PUBLIC_URL: https://rhforit.github.io
-          REACT_APP_BACKEND_URL: https://rhforit.github.io
+          PUBLIC_URL: https://SI30600.github.io/RhforIt
+          REACT_APP_BACKEND_URL: https://SI30600.github.io/RhforIt
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
