@@ -183,7 +183,7 @@ function App() {
     </div>
   );
 
-  const TextField = ({ label, value, onChange, icon: Icon, placeholder = "", type = "text" }) => (
+  const TextField = ({ label, value, onChange, icon: Icon, placeholder = "", type = "text", inputMode }) => (
     <div className="space-y-2">
       <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
         {Icon && <Icon className="w-4 h-4 text-[#00A0B0]" />}
@@ -191,9 +191,11 @@ function App() {
       </label>
       <input
         type={type}
+        inputMode={inputMode}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        autoComplete="off"
         className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00A0B0] focus:border-transparent transition-all"
         data-testid={`input-${label.toLowerCase().replace(/\s/g, '-')}`}
       />
@@ -337,6 +339,7 @@ function App() {
                     onChange={(v) => handleArriveeChange("telephone", v)}
                     icon={Phone}
                     placeholder="Pour création compte Google"
+                    inputMode="tel"
                   />
                 </div>
               </section>
