@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import "@/App.css";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -29,6 +29,73 @@ const FONCTIONS = [
 
 const LOGICIELS = ["Nox", "Lowenstein", "Les deux", "Aucun"];
 const TAILLES_PC = ['Petit (13-14")', 'Normal (15.6")', 'Grand (17")'];
+
+// Composant TextField mémorisé pour éviter les re-renders
+const TextField = memo(({ label, value, onChange, icon: Icon, placeholder = "", type = "text", inputMode }) => (
+  <div className="space-y-2">
+    <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
+      {Icon && <Icon className="w-4 h-4 text-[#00A0B0]" />}
+      {label}
+    </label>
+    <input
+      type={type}
+      inputMode={inputMode}
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      autoComplete="off"
+      className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00A0B0] focus:border-transparent transition-all"
+      data-testid={`input-${label.toLowerCase().replace(/\s/g, '-')}`}
+    />
+  </div>
+));
+
+// Composant SelectField mémorisé
+const SelectField = memo(({ label, value, onChange, options, icon: Icon, placeholder = "Sélectionner..." }) => (
+  <div className="space-y-2">
+    <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
+      {Icon && <Icon className="w-4 h-4 text-[#00A0B0]" />}
+      {label}
+    </label>
+    <select
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#00A0B0] focus:border-transparent transition-all cursor-pointer"
+      data-testid={`select-${label.toLowerCase().replace(/\s/g, '-')}`}
+    >
+      <option value="" className="bg-[#1B3A5F]">{placeholder}</option>
+      {options.map(opt => (
+        <option key={opt} value={opt} className="bg-[#1B3A5F]">{opt}</option>
+      ))}
+    </select>
+  </div>
+));
+
+// Composant Checkbox mémorisé
+const Checkbox = memo(({ label, checked, onChange }) => (
+  <label className="flex items-center gap-3 cursor-pointer group" data-testid={`checkbox-${label.toLowerCase().replace(/\s/g, '-')}`}>
+    <div 
+      className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+        checked 
+          ? 'bg-[#00A0B0] border-[#00A0B0]' 
+          : 'border-white/30 group-hover:border-[#00A0B0]'
+      }`}
+      onClick={() => onChange(!checked)}
+    >
+      {checked && <Check className="w-4 h-4 text-white" />}
+    </div>
+    <span className="text-white text-sm">{label}</span>
+  </label>
+));
+
+const SectionTitle = ({ children, icon: Icon }) => (
+  <div className="flex items-center gap-3 mb-4">
+    <div className="bg-[#00A0B0] p-2 rounded-lg">
+      <Icon className="w-5 h-5 text-white" />
+    </div>
+    <h3 className="text-lg font-semibold text-white">{children}</h3>
+  </div>
+);
 
 function App() {
   const [activeTab, setActiveTab] = useState("arrivee");
@@ -161,72 +228,6 @@ function App() {
     const data = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     saveAs(data, "formulaire_rh_somnum.xlsx");
   };
-
-  // Composants réutilisables
-  const SelectField = ({ label, value, onChange, options, icon: Icon, placeholder = "Sélectionner..." }) => (
-    <div className="space-y-2">
-      <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
-        {Icon && <Icon className="w-4 h-4 text-[#00A0B0]" />}
-        {label}
-      </label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#00A0B0] focus:border-transparent transition-all cursor-pointer"
-        data-testid={`select-${label.toLowerCase().replace(/\s/g, '-')}`}
-      >
-        <option value="" className="bg-[#1B3A5F]">{placeholder}</option>
-        {options.map(opt => (
-          <option key={opt} value={opt} className="bg-[#1B3A5F]">{opt}</option>
-        ))}
-      </select>
-    </div>
-  );
-
-  // Composant TextField simple
-  const TextField = ({ label, value, onChange, icon: Icon, placeholder = "", type = "text", inputMode }) => (
-    <div className="space-y-2">
-      <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
-        {Icon && <Icon className="w-4 h-4 text-[#00A0B0]" />}
-        {label}
-      </label>
-      <input
-        type={type}
-        inputMode={inputMode}
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        autoComplete="off"
-        className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00A0B0] focus:border-transparent transition-all"
-        data-testid={`input-${label.toLowerCase().replace(/\s/g, '-')}`}
-      />
-    </div>
-  );
-
-  const Checkbox = ({ label, checked, onChange }) => (
-    <label className="flex items-center gap-3 cursor-pointer group" data-testid={`checkbox-${label.toLowerCase().replace(/\s/g, '-')}`}>
-      <div 
-        className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-          checked 
-            ? 'bg-[#00A0B0] border-[#00A0B0]' 
-            : 'border-white/30 group-hover:border-[#00A0B0]'
-        }`}
-        onClick={() => onChange(!checked)}
-      >
-        {checked && <Check className="w-4 h-4 text-white" />}
-      </div>
-      <span className="text-white text-sm">{label}</span>
-    </label>
-  );
-
-  const SectionTitle = ({ children, icon: Icon }) => (
-    <div className="flex items-center gap-3 mb-4">
-      <div className="bg-[#00A0B0] p-2 rounded-lg">
-        <Icon className="w-5 h-5 text-white" />
-      </div>
-      <h3 className="text-lg font-semibold text-white">{children}</h3>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1B3A5F] to-[#0d1f33]">
