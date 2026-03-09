@@ -19,7 +19,7 @@ const COLORS = {
 
 const CENTRES = [
   "Arles", "Nîmes", "Alès", "Montpellier", "Aubenas", 
-  "Avignon", "Le Mans", "Lyon", "Firminy", "Rodez", "Aurillac", "Siège"
+  "Avignon", "Le Mans", "Lyon", "Firminy", "Rodez", "Aurillac", "Siège", "Autre"
 ];
 
 const FONCTIONS = [
@@ -41,6 +41,7 @@ function App() {
     prenom: "",
     telephone: "",
     centre: "",
+    centreAutre: "",
     statut: "",
     fonction: "",
     besoinOrdinateur: "",
@@ -69,6 +70,7 @@ function App() {
     nom: "",
     prenom: "",
     centre: "",
+    centreAutre: "",
     sauvegardeMail: false,
     suppressionCompte: false,
     liberationLicence: false,
@@ -99,7 +101,7 @@ function App() {
       ["Nom", arrivee.nom],
       ["Prénom", arrivee.prenom],
       ["Téléphone personnel", arrivee.telephone],
-      ["Centre de rattachement", arrivee.centre],
+      ["Centre de rattachement", arrivee.centre === "Autre" ? arrivee.centreAutre : arrivee.centre],
       [],
       ["TYPE DE PERSONNEL"],
       ["Statut", arrivee.statut],
@@ -138,7 +140,7 @@ function App() {
       ["Date de départ", depart.dateDepart],
       ["Nom", depart.nom],
       ["Prénom", depart.prenom],
-      ["Centre de rattachement", depart.centre],
+      ["Centre de rattachement", depart.centre === "Autre" ? depart.centreAutre : depart.centre],
       [],
       ["ACTIONS À RÉALISER"],
       ["Sauvegarde des mails", depart.sauvegardeMail ? "Fait" : "À faire"],
@@ -308,6 +310,15 @@ function App() {
                     options={CENTRES}
                     icon={Building2}
                   />
+                  {arrivee.centre === "Autre" && (
+                    <TextField 
+                      label="Préciser le centre" 
+                      value={arrivee.centreAutre} 
+                      onChange={(v) => handleArriveeChange("centreAutre", v)}
+                      icon={Building2}
+                      placeholder="Nom du centre..."
+                    />
+                  )}
                   <TextField 
                     label="Nom" 
                     value={arrivee.nom} 
@@ -489,6 +500,15 @@ function App() {
                     options={CENTRES}
                     icon={Building2}
                   />
+                  {depart.centre === "Autre" && (
+                    <TextField 
+                      label="Préciser le centre" 
+                      value={depart.centreAutre} 
+                      onChange={(v) => handleDepartChange("centreAutre", v)}
+                      icon={Building2}
+                      placeholder="Nom du centre..."
+                    />
+                  )}
                   <TextField 
                     label="Nom" 
                     value={depart.nom} 
