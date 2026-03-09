@@ -183,6 +183,7 @@ function App() {
     </div>
   );
 
+  // Composant TextField simple
   const TextField = ({ label, value, onChange, icon: Icon, placeholder = "", type = "text", inputMode }) => (
     <div className="space-y-2">
       <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
@@ -192,7 +193,7 @@ function App() {
       <input
         type={type}
         inputMode={inputMode}
-        value={value}
+        value={value || ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         autoComplete="off"
