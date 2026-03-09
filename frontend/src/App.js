@@ -383,12 +383,14 @@ function App() {
                     options={["PC Fixe", "PC Portable"]}
                     icon={Laptop}
                   />
-                  <SelectField 
-                    label="Taille PC portable" 
-                    value={arrivee.taillePC} 
-                    onChange={(v) => handleArriveeChange("taillePC", v)}
-                    options={TAILLES_PC}
-                  />
+                  {arrivee.typeOrdinateur === "PC Portable" && (
+                    <SelectField 
+                      label="Taille PC portable" 
+                      value={arrivee.taillePC} 
+                      onChange={(v) => handleArriveeChange("taillePC", v)}
+                      options={TAILLES_PC}
+                    />
+                  )}
                   <SelectField 
                     label="Caméra intégrée" 
                     value={arrivee.camera} 
