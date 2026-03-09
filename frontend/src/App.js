@@ -1,83 +1,568 @@
+import { useState } from "react";
 import "@/App.css";
-import { Download, FileSpreadsheet, CheckSquare, Users, LogOut } from "lucide-react";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import { 
+  Download, FileSpreadsheet, User, Building2, Monitor, 
+  Smartphone, Settings, LogOut, ChevronRight, Check,
+  Calendar, Phone, Laptop, Camera, Printer, FolderOpen
+} from "lucide-react";
 
-const Home = () => {
-  const handleDownload = () => {
-    const link = document.createElement('a');
-    link.href = '/formulaire_rh_somnum.xlsx';
-    link.download = 'formulaire_rh_somnum.xlsx';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1B3A5F] to-[#0d1f33] flex items-center justify-center p-6">
-      <div className="max-w-2xl w-full">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">SOMNUM</h1>
-          <p className="text-[#00A0B0] text-lg">Formulaire RH Informatique</p>
-        </div>
-
-        {/* Card principale */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="bg-[#00A0B0] p-4 rounded-xl">
-              <FileSpreadsheet className="w-10 h-10 text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-semibold text-white">Formulaire Excel Amélioré</h2>
-              <p className="text-gray-300">Version simplifiée avec menus déroulants</p>
-            </div>
-          </div>
-
-          {/* Fonctionnalités */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <div className="flex items-center gap-3 bg-white/5 rounded-lg p-4">
-              <CheckSquare className="w-6 h-6 text-[#00A0B0]" />
-              <span className="text-white">Menus déroulants</span>
-            </div>
-            <div className="flex items-center gap-3 bg-white/5 rounded-lg p-4">
-              <Users className="w-6 h-6 text-[#00A0B0]" />
-              <span className="text-white">Onglet Arrivée</span>
-            </div>
-            <div className="flex items-center gap-3 bg-white/5 rounded-lg p-4">
-              <LogOut className="w-6 h-6 text-[#00A0B0]" />
-              <span className="text-white">Onglet Départ</span>
-            </div>
-            <div className="flex items-center gap-3 bg-white/5 rounded-lg p-4">
-              <FileSpreadsheet className="w-6 h-6 text-[#00A0B0]" />
-              <span className="text-white">Guide d'utilisation</span>
-            </div>
-          </div>
-
-          {/* Bouton téléchargement */}
-          <button
-            onClick={handleDownload}
-            data-testid="download-btn"
-            className="w-full bg-[#00A0B0] hover:bg-[#008a99] text-white font-semibold py-4 px-6 rounded-xl flex items-center justify-center gap-3 transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-[#00A0B0]/30"
-          >
-            <Download className="w-6 h-6" />
-            Télécharger le formulaire Excel
-          </button>
-
-          <p className="text-center text-gray-400 text-sm mt-4">
-            formulaire_rh_somnum.xlsx • Couleurs Somnum
-          </p>
-        </div>
-
-        {/* Footer */}
-        <p className="text-center text-gray-500 text-sm mt-6">
-          © 2026 Somnum - Centres du sommeil
-        </p>
-      </div>
-    </div>
-  );
+// Couleurs Somnum
+const COLORS = {
+  bleuFonce: "#1B3A5F",
+  turquoise: "#00A0B0",
+  blanc: "#FFFFFF",
+  grisClair: "#F5F7FA",
+  grisMoyen: "#E8ECF0"
 };
 
+const CENTRES = [
+  "Arles", "Nîmes", "Alès", "Montpellier", "Aubenas", 
+  "Avignon", "Le Mans", "Lyon", "Firminy", "Rodez", "Aurillac", "Siège"
+];
+
+const FONCTIONS = [
+  "Médecin", "IDE", "Secrétaire", "Technicien(ne) du sommeil", 
+  "Assistant(e) médical(e)", "Sage-femme", "Personnel Siège", "Autre"
+];
+
+const LOGICIELS = ["Nox", "Lowenstein", "Les deux", "Aucun"];
+const TAILLES_PC = ['Petit (13-14")', 'Normal (15.6")', 'Grand (17")'];
+
 function App() {
-  return <Home />;
+  const [activeTab, setActiveTab] = useState("arrivee");
+  
+  // État formulaire Arrivée
+  const [arrivee, setArrivee] = useState({
+    dateDemande: "",
+    dateArrivee: "",
+    nom: "",
+    prenom: "",
+    telephone: "",
+    centre: "",
+    statut: "",
+    fonction: "",
+    besoinOrdinateur: "",
+    typeOrdinateur: "",
+    taillePC: "",
+    camera: "",
+    besoinTelephone: "",
+    logiciel: "",
+    somnobook: "",
+    imprimante: "",
+    accesDrive: "",
+    // Checklist IT
+    balMicrosoft: false,
+    intune: false,
+    antivirus: false,
+    drivePartage: false,
+    signatureMail: false,
+    entraId: false,
+    o365Chrome: false
+  });
+
+  // État formulaire Départ
+  const [depart, setDepart] = useState({
+    dateDemande: "",
+    dateDepart: "",
+    nom: "",
+    prenom: "",
+    centre: "",
+    sauvegardeMail: false,
+    suppressionCompte: false,
+    liberationLicence: false,
+    recuperationMateriel: false,
+    desactivationDrive: false,
+    suppressionIntune: false,
+    commentaires: ""
+  });
+
+  const handleArriveeChange = (field, value) => {
+    setArrivee(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleDepartChange = (field, value) => {
+    setDepart(prev => ({ ...prev, [field]: value }));
+  };
+
+  const exportToExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    // Feuille Arrivée
+    const arriveeData = [
+      ["FORMULAIRE D'ARRIVÉE - SOMNUM"],
+      [],
+      ["INFORMATIONS DU COLLABORATEUR"],
+      ["Date de la demande", arrivee.dateDemande],
+      ["Date d'arrivée prévue", arrivee.dateArrivee],
+      ["Nom", arrivee.nom],
+      ["Prénom", arrivee.prenom],
+      ["Téléphone personnel", arrivee.telephone],
+      ["Centre de rattachement", arrivee.centre],
+      [],
+      ["TYPE DE PERSONNEL"],
+      ["Statut", arrivee.statut],
+      ["Fonction", arrivee.fonction],
+      [],
+      ["BESOINS INFORMATIQUES"],
+      ["Besoin ordinateur", arrivee.besoinOrdinateur],
+      ["Type d'ordinateur", arrivee.typeOrdinateur],
+      ["Taille PC portable", arrivee.taillePC],
+      ["Caméra intégrée", arrivee.camera],
+      ["Besoin téléphone pro", arrivee.besoinTelephone],
+      ["Logiciel métier", arrivee.logiciel],
+      ["Raccourci SomnoBook", arrivee.somnobook],
+      ["Ajout imprimante", arrivee.imprimante],
+      ["Accès sites Drive", arrivee.accesDrive],
+      [],
+      ["CONFIGURATION IT"],
+      ["Création BAL Microsoft", arrivee.balMicrosoft ? "Fait" : "À faire"],
+      ["Intégration Intune", arrivee.intune ? "Fait" : "À faire"],
+      ["Installation Antivirus", arrivee.antivirus ? "Fait" : "À faire"],
+      ["Configuration Drive partagé", arrivee.drivePartage ? "Fait" : "À faire"],
+      ["Création signature mail", arrivee.signatureMail ? "Fait" : "À faire"],
+      ["Microsoft Entra ID", arrivee.entraId ? "Fait" : "À faire"],
+      ["Installation O365 + Chrome", arrivee.o365Chrome ? "Fait" : "À faire"]
+    ];
+    const wsArrivee = XLSX.utils.aoa_to_sheet(arriveeData);
+    wsArrivee["!cols"] = [{ wch: 30 }, { wch: 40 }];
+    XLSX.utils.book_append_sheet(wb, wsArrivee, "ARRIVÉE");
+
+    // Feuille Départ
+    const departData = [
+      ["FORMULAIRE DE DÉPART - SOMNUM"],
+      [],
+      ["INFORMATIONS DU COLLABORATEUR"],
+      ["Date de la demande", depart.dateDemande],
+      ["Date de départ", depart.dateDepart],
+      ["Nom", depart.nom],
+      ["Prénom", depart.prenom],
+      ["Centre de rattachement", depart.centre],
+      [],
+      ["ACTIONS À RÉALISER"],
+      ["Sauvegarde des mails", depart.sauvegardeMail ? "Fait" : "À faire"],
+      ["Suppression compte Microsoft", depart.suppressionCompte ? "Fait" : "À faire"],
+      ["Libération licence Microsoft", depart.liberationLicence ? "Fait" : "À faire"],
+      ["Récupération matériel", depart.recuperationMateriel ? "Fait" : "À faire"],
+      ["Désactivation accès Drive", depart.desactivationDrive ? "Fait" : "À faire"],
+      ["Suppression Intune", depart.suppressionIntune ? "Fait" : "À faire"],
+      [],
+      ["Commentaires", depart.commentaires]
+    ];
+    const wsDepart = XLSX.utils.aoa_to_sheet(departData);
+    wsDepart["!cols"] = [{ wch: 30 }, { wch: 40 }];
+    XLSX.utils.book_append_sheet(wb, wsDepart, "DÉPART");
+
+    // Export
+    const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const data = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    saveAs(data, "formulaire_rh_somnum.xlsx");
+  };
+
+  // Composants réutilisables
+  const SelectField = ({ label, value, onChange, options, icon: Icon, placeholder = "Sélectionner..." }) => (
+    <div className="space-y-2">
+      <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
+        {Icon && <Icon className="w-4 h-4 text-[#00A0B0]" />}
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-[#00A0B0] focus:border-transparent transition-all cursor-pointer"
+        data-testid={`select-${label.toLowerCase().replace(/\s/g, '-')}`}
+      >
+        <option value="" className="bg-[#1B3A5F]">{placeholder}</option>
+        {options.map(opt => (
+          <option key={opt} value={opt} className="bg-[#1B3A5F]">{opt}</option>
+        ))}
+      </select>
+    </div>
+  );
+
+  const TextField = ({ label, value, onChange, icon: Icon, placeholder = "", type = "text" }) => (
+    <div className="space-y-2">
+      <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
+        {Icon && <Icon className="w-4 h-4 text-[#00A0B0]" />}
+        {label}
+      </label>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00A0B0] focus:border-transparent transition-all"
+        data-testid={`input-${label.toLowerCase().replace(/\s/g, '-')}`}
+      />
+    </div>
+  );
+
+  const Checkbox = ({ label, checked, onChange }) => (
+    <label className="flex items-center gap-3 cursor-pointer group" data-testid={`checkbox-${label.toLowerCase().replace(/\s/g, '-')}`}>
+      <div 
+        className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+          checked 
+            ? 'bg-[#00A0B0] border-[#00A0B0]' 
+            : 'border-white/30 group-hover:border-[#00A0B0]'
+        }`}
+        onClick={() => onChange(!checked)}
+      >
+        {checked && <Check className="w-4 h-4 text-white" />}
+      </div>
+      <span className="text-white text-sm">{label}</span>
+    </label>
+  );
+
+  const SectionTitle = ({ children, icon: Icon }) => (
+    <div className="flex items-center gap-3 mb-4">
+      <div className="bg-[#00A0B0] p-2 rounded-lg">
+        <Icon className="w-5 h-5 text-white" />
+      </div>
+      <h3 className="text-lg font-semibold text-white">{children}</h3>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#1B3A5F] to-[#0d1f33]">
+      {/* Header */}
+      <header className="bg-[#1B3A5F]/80 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <FileSpreadsheet className="w-8 h-8 text-[#00A0B0]" />
+            <div>
+              <h1 className="text-xl font-bold text-white">SOMNUM</h1>
+              <p className="text-xs text-[#00A0B0]">Formulaire RH Informatique</p>
+            </div>
+          </div>
+          <button
+            onClick={exportToExcel}
+            data-testid="export-btn"
+            className="bg-[#00A0B0] hover:bg-[#008a99] text-white font-medium py-2.5 px-5 rounded-lg flex items-center gap-2 transition-all transform hover:scale-105 shadow-lg"
+          >
+            <Download className="w-5 h-5" />
+            Exporter Excel
+          </button>
+        </div>
+      </header>
+
+      {/* Tabs */}
+      <div className="max-w-6xl mx-auto px-6 pt-6">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab("arrivee")}
+            data-testid="tab-arrivee"
+            className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-medium transition-all ${
+              activeTab === "arrivee"
+                ? "bg-white/10 text-white border-t-2 border-[#00A0B0]"
+                : "text-gray-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <User className="w-5 h-5" />
+            Arrivée
+          </button>
+          <button
+            onClick={() => setActiveTab("depart")}
+            data-testid="tab-depart"
+            className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-medium transition-all ${
+              activeTab === "depart"
+                ? "bg-white/10 text-white border-t-2 border-[#00A0B0]"
+                : "text-gray-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <LogOut className="w-5 h-5" />
+            Départ
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-6xl mx-auto px-6 pb-10">
+        <div className="bg-white/5 backdrop-blur-lg rounded-b-2xl rounded-tr-2xl border border-white/10 p-8">
+          
+          {/* FORMULAIRE ARRIVÉE */}
+          {activeTab === "arrivee" && (
+            <div className="space-y-8">
+              {/* Section Informations */}
+              <section>
+                <SectionTitle icon={User}>Informations du collaborateur</SectionTitle>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <TextField 
+                    label="Date de la demande" 
+                    value={arrivee.dateDemande} 
+                    onChange={(v) => handleArriveeChange("dateDemande", v)}
+                    icon={Calendar}
+                    type="date"
+                  />
+                  <TextField 
+                    label="Date d'arrivée prévue" 
+                    value={arrivee.dateArrivee} 
+                    onChange={(v) => handleArriveeChange("dateArrivee", v)}
+                    icon={Calendar}
+                    type="date"
+                  />
+                  <SelectField 
+                    label="Centre de rattachement" 
+                    value={arrivee.centre} 
+                    onChange={(v) => handleArriveeChange("centre", v)}
+                    options={CENTRES}
+                    icon={Building2}
+                  />
+                  <TextField 
+                    label="Nom" 
+                    value={arrivee.nom} 
+                    onChange={(v) => handleArriveeChange("nom", v)}
+                    icon={User}
+                  />
+                  <TextField 
+                    label="Prénom" 
+                    value={arrivee.prenom} 
+                    onChange={(v) => handleArriveeChange("prenom", v)}
+                    icon={User}
+                  />
+                  <TextField 
+                    label="Téléphone personnel" 
+                    value={arrivee.telephone} 
+                    onChange={(v) => handleArriveeChange("telephone", v)}
+                    icon={Phone}
+                    placeholder="Pour création compte Google"
+                  />
+                </div>
+              </section>
+
+              {/* Section Type Personnel */}
+              <section>
+                <SectionTitle icon={Building2}>Type de personnel</SectionTitle>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <SelectField 
+                    label="Statut" 
+                    value={arrivee.statut} 
+                    onChange={(v) => handleArriveeChange("statut", v)}
+                    options={["Salarié", "Collaborateur"]}
+                  />
+                  <SelectField 
+                    label="Fonction" 
+                    value={arrivee.fonction} 
+                    onChange={(v) => handleArriveeChange("fonction", v)}
+                    options={FONCTIONS}
+                  />
+                </div>
+              </section>
+
+              {/* Section Besoins Informatiques */}
+              <section>
+                <SectionTitle icon={Monitor}>Besoins informatiques</SectionTitle>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <SelectField 
+                    label="Besoin d'un ordinateur" 
+                    value={arrivee.besoinOrdinateur} 
+                    onChange={(v) => handleArriveeChange("besoinOrdinateur", v)}
+                    options={["Oui", "Non"]}
+                    icon={Monitor}
+                  />
+                  <SelectField 
+                    label="Type d'ordinateur" 
+                    value={arrivee.typeOrdinateur} 
+                    onChange={(v) => handleArriveeChange("typeOrdinateur", v)}
+                    options={["PC Fixe", "PC Portable"]}
+                    icon={Laptop}
+                  />
+                  <SelectField 
+                    label="Taille PC portable" 
+                    value={arrivee.taillePC} 
+                    onChange={(v) => handleArriveeChange("taillePC", v)}
+                    options={TAILLES_PC}
+                  />
+                  <SelectField 
+                    label="Caméra intégrée" 
+                    value={arrivee.camera} 
+                    onChange={(v) => handleArriveeChange("camera", v)}
+                    options={["Oui", "Non"]}
+                    icon={Camera}
+                  />
+                  <SelectField 
+                    label="Besoin téléphone pro" 
+                    value={arrivee.besoinTelephone} 
+                    onChange={(v) => handleArriveeChange("besoinTelephone", v)}
+                    options={["Oui", "Non"]}
+                    icon={Smartphone}
+                  />
+                  <SelectField 
+                    label="Logiciel métier" 
+                    value={arrivee.logiciel} 
+                    onChange={(v) => handleArriveeChange("logiciel", v)}
+                    options={LOGICIELS}
+                    icon={Settings}
+                  />
+                  <SelectField 
+                    label="Raccourci SomnoBook" 
+                    value={arrivee.somnobook} 
+                    onChange={(v) => handleArriveeChange("somnobook", v)}
+                    options={["Oui", "Non"]}
+                  />
+                  <SelectField 
+                    label="Ajout imprimante" 
+                    value={arrivee.imprimante} 
+                    onChange={(v) => handleArriveeChange("imprimante", v)}
+                    options={["Oui", "Non"]}
+                    icon={Printer}
+                  />
+                  <TextField 
+                    label="Accès sites Drive" 
+                    value={arrivee.accesDrive} 
+                    onChange={(v) => handleArriveeChange("accesDrive", v)}
+                    icon={FolderOpen}
+                    placeholder="Préciser les sites..."
+                  />
+                </div>
+              </section>
+
+              {/* Section Configuration IT */}
+              <section>
+                <SectionTitle icon={Settings}>Configuration IT (cocher quand fait)</SectionTitle>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-white/5 rounded-xl p-6">
+                  <Checkbox 
+                    label="Création BAL Microsoft" 
+                    checked={arrivee.balMicrosoft}
+                    onChange={(v) => handleArriveeChange("balMicrosoft", v)}
+                  />
+                  <Checkbox 
+                    label="Intégration sur Intune" 
+                    checked={arrivee.intune}
+                    onChange={(v) => handleArriveeChange("intune", v)}
+                  />
+                  <Checkbox 
+                    label="Installation Antivirus" 
+                    checked={arrivee.antivirus}
+                    onChange={(v) => handleArriveeChange("antivirus", v)}
+                  />
+                  <Checkbox 
+                    label="Configuration Drive partagé" 
+                    checked={arrivee.drivePartage}
+                    onChange={(v) => handleArriveeChange("drivePartage", v)}
+                  />
+                  <Checkbox 
+                    label="Création signature mail" 
+                    checked={arrivee.signatureMail}
+                    onChange={(v) => handleArriveeChange("signatureMail", v)}
+                  />
+                  <Checkbox 
+                    label="Microsoft Entra ID" 
+                    checked={arrivee.entraId}
+                    onChange={(v) => handleArriveeChange("entraId", v)}
+                  />
+                  <Checkbox 
+                    label="Installation O365 + Chrome" 
+                    checked={arrivee.o365Chrome}
+                    onChange={(v) => handleArriveeChange("o365Chrome", v)}
+                  />
+                </div>
+              </section>
+            </div>
+          )}
+
+          {/* FORMULAIRE DÉPART */}
+          {activeTab === "depart" && (
+            <div className="space-y-8">
+              {/* Section Informations */}
+              <section>
+                <SectionTitle icon={User}>Informations du collaborateur</SectionTitle>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <TextField 
+                    label="Date de la demande" 
+                    value={depart.dateDemande} 
+                    onChange={(v) => handleDepartChange("dateDemande", v)}
+                    icon={Calendar}
+                    type="date"
+                  />
+                  <TextField 
+                    label="Date de départ" 
+                    value={depart.dateDepart} 
+                    onChange={(v) => handleDepartChange("dateDepart", v)}
+                    icon={Calendar}
+                    type="date"
+                  />
+                  <SelectField 
+                    label="Centre de rattachement" 
+                    value={depart.centre} 
+                    onChange={(v) => handleDepartChange("centre", v)}
+                    options={CENTRES}
+                    icon={Building2}
+                  />
+                  <TextField 
+                    label="Nom" 
+                    value={depart.nom} 
+                    onChange={(v) => handleDepartChange("nom", v)}
+                    icon={User}
+                  />
+                  <TextField 
+                    label="Prénom" 
+                    value={depart.prenom} 
+                    onChange={(v) => handleDepartChange("prenom", v)}
+                    icon={User}
+                  />
+                </div>
+              </section>
+
+              {/* Section Actions Départ */}
+              <section>
+                <SectionTitle icon={Settings}>Actions à réaliser (cocher quand fait)</SectionTitle>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white/5 rounded-xl p-6">
+                  <Checkbox 
+                    label="Sauvegarde des mails (OneDrive KENNEDY\SIEGE\IT)" 
+                    checked={depart.sauvegardeMail}
+                    onChange={(v) => handleDepartChange("sauvegardeMail", v)}
+                  />
+                  <Checkbox 
+                    label="Suppression compte Microsoft" 
+                    checked={depart.suppressionCompte}
+                    onChange={(v) => handleDepartChange("suppressionCompte", v)}
+                  />
+                  <Checkbox 
+                    label="Libération licence Microsoft" 
+                    checked={depart.liberationLicence}
+                    onChange={(v) => handleDepartChange("liberationLicence", v)}
+                  />
+                  <Checkbox 
+                    label="Récupération matériel (PC / Téléphone)" 
+                    checked={depart.recuperationMateriel}
+                    onChange={(v) => handleDepartChange("recuperationMateriel", v)}
+                  />
+                  <Checkbox 
+                    label="Désactivation accès Drive" 
+                    checked={depart.desactivationDrive}
+                    onChange={(v) => handleDepartChange("desactivationDrive", v)}
+                  />
+                  <Checkbox 
+                    label="Suppression Intune" 
+                    checked={depart.suppressionIntune}
+                    onChange={(v) => handleDepartChange("suppressionIntune", v)}
+                  />
+                </div>
+              </section>
+
+              {/* Commentaires */}
+              <section>
+                <SectionTitle icon={FileSpreadsheet}>Commentaires</SectionTitle>
+                <textarea
+                  value={depart.commentaires}
+                  onChange={(e) => handleDepartChange("commentaires", e.target.value)}
+                  placeholder="Ajouter des commentaires..."
+                  className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00A0B0] focus:border-transparent transition-all min-h-[120px] resize-none"
+                  data-testid="textarea-commentaires"
+                />
+              </section>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="text-center py-6 text-gray-500 text-sm">
+        © 2026 Somnum - Centres du sommeil
+      </footer>
+    </div>
+  );
 }
 
 export default App;
