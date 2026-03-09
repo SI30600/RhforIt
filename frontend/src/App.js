@@ -116,6 +116,8 @@ function App() {
     taillePC: "",
     camera: "",
     besoinTelephone: "",
+    besoinCasque: "",
+    besoinLigneTel: "",
     logiciel: "",
     somnobook: "",
     imprimante: "",
@@ -180,6 +182,8 @@ function App() {
       ["Taille PC portable", arrivee.taillePC],
       ["Caméra intégrée", arrivee.camera],
       ["Besoin téléphone pro", arrivee.besoinTelephone],
+      ["Besoin casque", arrivee.besoinCasque],
+      ["Rajout ligne téléphonique PC", arrivee.besoinLigneTel],
       ["Logiciel métier", arrivee.logiciel],
       ["Raccourci SomnoBook", arrivee.somnobook],
       ["Ajout imprimante", arrivee.imprimante],
@@ -404,6 +408,19 @@ function App() {
                     onChange={(v) => handleArriveeChange("besoinTelephone", v)}
                     options={["Oui", "Non"]}
                     icon={Smartphone}
+                  />
+                  <SelectField 
+                    label="Besoin casque" 
+                    value={arrivee.besoinCasque} 
+                    onChange={(v) => handleArriveeChange("besoinCasque", v)}
+                    options={["Oui", "Non"]}
+                  />
+                  <SelectField 
+                    label="Rajout ligne tél. PC" 
+                    value={arrivee.besoinLigneTel} 
+                    onChange={(v) => handleArriveeChange("besoinLigneTel", v)}
+                    options={["Oui", "Non"]}
+                    icon={Phone}
                   />
                   <SelectField 
                     label="Logiciel métier" 
