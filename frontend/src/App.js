@@ -2,11 +2,18 @@ import { useState, memo } from "react";
 import "@/App.css";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import emailjs from "@emailjs/browser";
 import { 
   Download, FileSpreadsheet, User, Building2, Monitor, 
   Smartphone, Settings, LogOut, ChevronRight, Check,
-  Calendar, Phone, Laptop, Camera, Printer, FolderOpen
+  Calendar, Phone, Laptop, Camera, Printer, FolderOpen,
+  Mail, Loader2
 } from "lucide-react";
+
+// EmailJS Configuration
+const EMAILJS_SERVICE_ID = "service_y6r58y8";
+const EMAILJS_TEMPLATE_ID = "template_b6pi4zy";
+const EMAILJS_PUBLIC_KEY = "kgAy6XnB4x_VjdDB2";
 
 // Couleurs Somnum
 const COLORS = {
@@ -99,6 +106,8 @@ const SectionTitle = ({ children, icon: Icon }) => (
 
 function App() {
   const [activeTab, setActiveTab] = useState("arrivee");
+  const [isSending, setIsSending] = useState(false);
+  const [emailStatus, setEmailStatus] = useState(null); // 'success', 'error', null
   
   // État formulaire Arrivée
   const [arrivee, setArrivee] = useState({
@@ -233,6 +242,121 @@ function App() {
     saveAs(data, "formulaire_rh_somnum.xlsx");
   };
 
+  // Envoi par email
+  const sendByEmail = async () => {
+    setIsSending(true);
+    setEmailStatus(null);
+
+    // Préparer les données selon l'onglet actif
+    const isArrivee = activeTab === "arrivee";
+    const formData = isArrivee ? arrivee : depart;
+    
+    // Vérifier que le nom est rempli
+    if (!formData.nom || !formData.prenom) {
+      alert("Veuillez remplir au moins le nom et le prénom.");
+      setIsSending(false);
+      return;
+    }
+
+    // Construire le contenu de l'email
+    let emailContent = "";
+    
+    if (isArrivee) {
+      emailContent = `
+FORMULAIRE D'ARRIVÉE - SOMNUM
+=============================
+
+INFORMATIONS DU COLLABORATEUR
+-----------------------------
+Date de la demande : ${arrivee.dateDemande || "Non renseigné"}
+Date d'arrivée prévue : ${arrivee.dateArrivee || "Non renseigné"}
+Nom : ${arrivee.nom}
+Prénom : ${arrivee.prenom}
+Téléphone personnel : ${arrivee.telephone || "Non renseigné"}
+Centre de rattachement : ${arrivee.centre === "Autre" ? arrivee.centreAutre : arrivee.centre || "Non renseigné"}
+
+TYPE DE PERSONNEL
+-----------------
+Statut : ${arrivee.statut || "Non renseigné"}
+Fonction : ${arrivee.fonction || "Non renseigné"}
+
+BESOINS INFORMATIQUES
+---------------------
+Besoin ordinateur : ${arrivee.besoinOrdinateur || "Non renseigné"}
+Type d'ordinateur : ${arrivee.typeOrdinateur || "Non renseigné"}
+Taille PC portable : ${arrivee.taillePC || "Non applicable"}
+Caméra intégrée : ${arrivee.camera || "Non renseigné"}
+Besoin téléphone pro : ${arrivee.besoinTelephone || "Non renseigné"}
+Besoin casque : ${arrivee.besoinCasque || "Non renseigné"}
+Rajout ligne tél. PC : ${arrivee.besoinLigneTel || "Non renseigné"}
+Logiciel métier : ${arrivee.logiciel || "Non renseigné"}
+Raccourci SomnoBook : ${arrivee.somnobook || "Non renseigné"}
+Ajout imprimante : ${arrivee.imprimante || "Non renseigné"}
+Accès sites Drive : ${arrivee.accesDrive || "Non renseigné"}
+
+CONFIGURATION IT (à faire)
+--------------------------
+${arrivee.balMicrosoft ? "✓" : "☐"} Création BAL Microsoft
+${arrivee.intune ? "✓" : "☐"} Intégration sur Intune
+${arrivee.antivirus ? "✓" : "☐"} Installation Antivirus
+${arrivee.drivePartage ? "✓" : "☐"} Configuration Drive partagé
+${arrivee.signatureMail ? "✓" : "☐"} Création signature mail
+${arrivee.entraId ? "✓" : "☐"} Microsoft Entra ID
+${arrivee.o365Chrome ? "✓" : "☐"} Installation O365 + Chrome
+      `;
+    } else {
+      emailContent = `
+FORMULAIRE DE DÉPART - SOMNUM
+=============================
+
+INFORMATIONS DU COLLABORATEUR
+-----------------------------
+Date de la demande : ${depart.dateDemande || "Non renseigné"}
+Date de départ : ${depart.dateDepart || "Non renseigné"}
+Nom : ${depart.nom}
+Prénom : ${depart.prenom}
+Centre de rattachement : ${depart.centre === "Autre" ? depart.centreAutre : depart.centre || "Non renseigné"}
+
+ACTIONS À RÉALISER
+------------------
+${depart.sauvegardeMail ? "✓" : "☐"} Sauvegarde des mails (OneDrive KENNEDY\\SIEGE\\IT)
+${depart.suppressionCompte ? "✓" : "☐"} Suppression compte Microsoft
+${depart.liberationLicence ? "✓" : "☐"} Libération licence Microsoft
+${depart.recuperationMateriel ? "✓" : "☐"} Récupération matériel (PC / Téléphone)
+${depart.desactivationDrive ? "✓" : "☐"} Désactivation accès Drive
+${depart.suppressionIntune ? "✓" : "☐"} Suppression Intune
+
+COMMENTAIRES
+------------
+${depart.commentaires || "Aucun commentaire"}
+      `;
+    }
+
+    const templateParams = {
+      type: isArrivee ? "ARRIVÉE" : "DÉPART",
+      nom: formData.nom,
+      prenom: formData.prenom,
+      centre: formData.centre === "Autre" ? formData.centreAutre : formData.centre,
+      message: emailContent,
+    };
+
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        templateParams,
+        EMAILJS_PUBLIC_KEY
+      );
+      setEmailStatus("success");
+      setTimeout(() => setEmailStatus(null), 5000);
+    } catch (error) {
+      console.error("Erreur envoi email:", error);
+      setEmailStatus("error");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1B3A5F] to-[#0d1f33]">
       {/* Header */}
@@ -245,16 +369,48 @@ function App() {
               <p className="text-xs text-[#00A0B0]">Formulaire RH Informatique</p>
             </div>
           </div>
-          <button
-            onClick={exportToExcel}
-            data-testid="export-btn"
-            className="bg-[#00A0B0] hover:bg-[#008a99] text-white font-medium py-2.5 px-5 rounded-lg flex items-center gap-2 transition-all transform hover:scale-105 shadow-lg"
-          >
-            <Download className="w-5 h-5" />
-            Exporter Excel
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={sendByEmail}
+              disabled={isSending}
+              data-testid="email-btn"
+              className="bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white font-medium py-2.5 px-5 rounded-lg flex items-center gap-2 transition-all transform hover:scale-105 shadow-lg disabled:cursor-not-allowed"
+            >
+              {isSending ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Mail className="w-5 h-5" />
+              )}
+              {isSending ? "Envoi..." : "Envoyer par email"}
+            </button>
+            <button
+              onClick={exportToExcel}
+              data-testid="export-btn"
+              className="bg-[#00A0B0] hover:bg-[#008a99] text-white font-medium py-2.5 px-5 rounded-lg flex items-center gap-2 transition-all transform hover:scale-105 shadow-lg"
+            >
+              <Download className="w-5 h-5" />
+              Exporter Excel
+            </button>
+          </div>
         </div>
       </header>
+
+      {/* Status messages */}
+      {emailStatus === "success" && (
+        <div className="max-w-6xl mx-auto px-6 pt-4">
+          <div className="bg-green-600/20 border border-green-500 text-green-300 px-4 py-3 rounded-lg flex items-center gap-2">
+            <Check className="w-5 h-5" />
+            Email envoyé avec succès à informatique@somnum.fr !
+          </div>
+        </div>
+      )}
+      {emailStatus === "error" && (
+        <div className="max-w-6xl mx-auto px-6 pt-4">
+          <div className="bg-red-600/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg">
+            Erreur lors de l'envoi de l'email. Veuillez réessayer.
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="max-w-6xl mx-auto px-6 pt-6">
